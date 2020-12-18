@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>bad security</title>
+  </head>
+  <body>
+
+    <div>
+      <p><a href="{% url 'user_info' user.id %}">{{user.username}}</a></p>
+      <p><a href="{% url 'logout' %}">Logout</a></p>
+    </div>
+
+    <div style="float: right;">
+      <h3>Search for notes</h2>
+        <form action='search/' method="POST">
+          {% csrf_token %}
+          <textarea type="text" name='search_term' placeholder="Search for..." cols="20" rows="1"></textarea>
+          <input type="submit" value="Search">
+        </form>
+    </div>
+
+    <div>
+      <h2>Leave a note</h2>
+      <form action='add/' method="POST">
+        {% csrf_token %}
+        <textarea name="content" cols="20" rows="5"></textarea>
+        <br/>
+        <input type="submit" value="Send"/>
+      </form>
+    </div>
+
+    
+    
+    <div>
+      <h1>Latest Notes</h1>
+      {% if latest_notes %}
+        <ul>
+        {% for note in latest_notes %}
+          <li>
+            <div class="card">
+              <p>{{ note.user.username}} @ {{note.pub_date.time}}</p>
+                <a href="{% url 'note' note.id %}">
+                  {{ note.note_text | truncatechars:100}}
+                </a>
+            </div>
+          </li>
+        {% endfor %}
+        </ul>
+      {% else %}
+        <p>No Content this time</p>
+      {% endif %}
+    </div>
+
+    <h2>Leave a note</h2>
+    <form action='add/' method="POST">
+      {% csrf_token %}
+      <textarea name="content" cols="20" rows="5"></textarea>
+      <br/>
+      <input type="submit" value="Send"/>
+    </form>
+
+    <h3>Search for notes</h2>
+    <form action='search/' method="POST">
+      {% csrf_token %}
+    <textarea type="text" name='search_term' placeholder="Search for..." cols="20" rows="1"></textarea>
+    <input type="submit" value="Search">
+  </form>
+  </body>
+
+  <style>
+    .card {
+      width: 40%;
+      height: 3;
+      border: double;
+      padding-bottom: 1em;
+      padding-left: 0.5em;
+      padding-right: 0.5em;
+      margin: 0.5em;
+    }
+  </style>
+</html>
