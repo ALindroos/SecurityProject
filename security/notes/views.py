@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.template import loader
 from datetime import datetime
-from django.contrib.auth import logout
+from django.contrib.auth import logout, login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 import sqlite3
@@ -29,7 +29,13 @@ def note(request, note_id):
 def add(request):
   user = request.user
   note = request.POST.get('content')
-  Note.objects.create(note_text = note, pub_date= datetime.now(), user = user)
+  cursor = sqlite3.connect('db.sqlite3').cursor()
+
+  cursor.executescript("""
+    INSERT into notes_note (note_text, pub_date, user_id)
+    values('%s', '%s', %s);
+  """ % (note, datetime.now(), user.id))
+
   return redirect('/notes')
 
 
@@ -41,10 +47,10 @@ def user(request, user_id):
 
 @login_required
 def search(request):
-  ##"%' AND '%' UNION SELECT  is_superuser, password, email, username FROM auth_user --"
   search_term = request.POST.get('search_term')
   cursor = sqlite3.connect('db.sqlite3').cursor()
-  res = cursor.execute("SELECT notes_note.id, note_text, username, pub_date FROM notes_note LEFT JOIN auth_user ON notes_note.user_id = auth_user.id WHERE note_text LIKE '%%%s%%' " % (search_term)).fetchall()
+
+  res = cursor.execute("SELECT notes_note.id, note_text, username, pub_date FROM notes_note LEFT JOIN auth_user ON notes_note.user_id = auth_user.id WHERE note_text LIKE '%%%s%%' " % search_term).fetchall()
 
   response = []
   for row in res:
@@ -57,3 +63,25 @@ def search(request):
 def logout_view(request):
   logout(request)
   return redirect("/notes")
+
+def signup_view(request):
+  if request.method == 'POST':
+    username = request.POST.get('username')
+    first_name = request.POST.get('first_name')
+    last_name = request.POST.get('last_name')
+    email = request.POST.get('email')
+    psw = request.POST.get('password')
+    psw2 = request.POST.get('password_ver')
+
+    if (psw == psw2):
+      user = User.objects.create_user(username=username, email=email, password=psw,
+        first_name=first_name, last_name=last_name)
+      user.save()
+      
+      user = authenticate(request, username=username, password=psw)
+      login(request, user)
+      return redirect("/notes")
+
+
+
+  return render(request, 'registration/signup.html')
